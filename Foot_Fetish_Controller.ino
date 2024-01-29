@@ -6,8 +6,10 @@ const int buttonPin[NButtons] = {2, 3, 4, 5, 6};
 int buttonCState[NButtons] = {};
 int buttonPState[NButtons] = {};
 
+int buttonMidiState[NButtons] = {0};
+
 unsigned long lastDebounceTime[NButtons] = {0};
-unsigned long debounceDelay = 50;
+unsigned long debounceDelay = 20;
 
 const int NPots = 1;
 const int potPin[NPots] = {A0};
@@ -18,6 +20,8 @@ int potVar = 0;
 
 int midiCState[NPots] = {0};
 int midiPState[NPots] = {0};
+
+
 
 const int TIMEOUT = 300;
 const int varThreshold = 10;
@@ -49,19 +53,22 @@ void buttons() {
   for (int i = 0; i < NButtons; i++) {
 
     buttonCState[i] = digitalRead(buttonPin[i]);
-
     if ((millis() - lastDebounceTime[i]) > debounceDelay) {
-
       if (buttonPState[i] != buttonCState[i]) {
+
         lastDebounceTime[i] = millis();
 
         if (buttonCState[i] == LOW) {
-          controlChange(midiCh, cc + i, 127);
-          MidiUSB.flush();
-        }
-        else {
-          controlChange(midiCh, cc + i, 0);
-          MidiUSB.flush();
+
+          if (buttonMidiState[i] == buttonCState[i]) {
+            controlChange(midiCh, cc + i, 127);
+            MidiUSB.flush();
+            buttonMidiState[i] = buttonPState[i];
+          } else {
+            controlChange(midiCh, cc + i, 0);
+            MidiUSB.flush();
+            buttonMidiState[i] = buttonCState[i];
+          }
         }
         buttonPState[i] = buttonCState[i];
       }
